@@ -6,6 +6,7 @@ packages:
   - nototools
   - pngquant
   - zopfli
+  - rsync
 environment:
   VERSION: 14.0.2
 sources:
