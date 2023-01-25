@@ -1,0 +1,34 @@
+image: alpine/edge
+packages:
+  - make
+  - graphicsmagick
+  - cairo-dev
+  - nototools
+  - pngquant
+  - zopfli
+environment:
+  VERSION: 14.0.2
+sources:
+  - https://src.fedoraproject.org/rpms/twitter-twemoji-fonts.git#78a8615f22996e173b6489b004210f6302cfa456
+  - https://github.com/twitter/twemoji.git#v14.0.2
+  - https://github.com/googlefonts/noto-emoji.git#ac1703e9d7feebbf5443a986e08332b1e1c5afcf
+triggers:
+  - action: email
+    condition: failure
+    to: Hugo Osvaldo Barrera <hugo@whynothugo.nl>
+tasks:
+  - patch: |
+      cd noto-emoji.git
+      patch --p1 -i ../twitter-twemoji-fonts.git/noto-emoji-use-system-pngquant.patch
+      patch --p1 -i ../twitter-twemoji-fonts.git/noto-emoji-build-all-flags.patch
+      patch --p1 -i ../twitter-twemoji-fonts.git/noto-emoji-use-gm.patch
+  - prepare: |
+      cd noto-emoji.git
+      mv NotoColorEmoji.tmpl.ttx.tmpl Twemoji.tmpl.ttx.tmpl
+      sed -i 's/Noto Color Emoji/Twemoji/; s/NotoColorEmoji/Twemoji/; s/Copyright .* Google Inc\./Twitter, Inc and other contributors./; s/ Version .*/ '$VERSION'/; s/.*is a trademark.*//; s/Google, Inc\./Twitter, Inc and other contributors/; s,http://www.google.com/get/noto/,https://github.com/twitter/twemoji/,; s/.*is licensed under.*/      Creative Commons Attribution 4.0 International/; s,http://scripts.sil.org/OFL,http://creativecommons.org/licenses/by/4.0/,' Twemoji.tmpl.ttx.tmpl
+      cd ../twemoji-$pkgver/assets/72x72/
+      for png in *.png; do
+          mv $png emoji_u${png//-/_}
+      done
+  - build: |
+      make EMOJI=Twemoji EMOJI_SRC_DIR=../twemoji-$VERSION/assets/72x72 FLAGS= BODY_DIMENSIONS=76x72
