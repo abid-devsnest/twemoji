@@ -29,5 +29,8 @@ Copyright 2019 Twitter, Inc and other contributors
 
 Graphics licensed under CC-BY 4.0: https://creativecommons.org/licenses/by/4.0/
 
-The build system and Fedora's patches have their own licence, but these are
-just dependencies of this project; this project does not redistribute them.
+## Build scripts
+
+The code in this repository (which is honestly just a tiny script) is under the
+Apache license, version 2.0. This choice was made to match the licensing of the
+build scripts being used.
