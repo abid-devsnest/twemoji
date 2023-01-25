@@ -17,6 +17,12 @@ font-format designed by Adobe and Mozilla, which basically only work on
 Windows, Firefox and some very rare applications. Major toolkits like Qt and
 GTK do not support them.
 
+# Patches
+
+Patches can be sent to my [public inbox]. Questions too.
+
+[public inbox]: https://lists.sr.ht/~whynothugo/public-inbox
+
 # Licence
 
 Copyright 2019 Twitter, Inc and other contributors
