@@ -8,7 +8,12 @@ The build script here combines some patches from Fedora's package, the build
 system from Noto fonts, and Twemoji itself from Twitter.
 
 Font files themselves are redistributed as raw TTF files, so that any
-downstream project can ship those without further hassle.
+downstream project can ship those without further hassle. Files are published
+at:
+
+    https://artefacts.whynothugo.nl/twemoji.ttf/
+
+Builds are manually triggered when there are upstream releases.
 
 # Prior art
 
