@@ -19,8 +19,8 @@ Builds are manually triggered when there are upstream releases.
 
 Mozilla distributes it's own builds of this font. However, these are in a
 font-format designed by Adobe and Mozilla, which basically only work on
-Windows, Firefox and some very rare applications. Major toolkits like Qt and
-GTK do not support them.
+Windows, Firefox and some rare applications. Major toolkits like Qt and GTK do
+not support them.
 
 # Patches
 
