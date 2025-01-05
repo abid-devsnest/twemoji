@@ -11,7 +11,7 @@ Font files themselves are redistributed as raw TTF files, so that any
 downstream project can ship those without further hassle. Files are published
 at:
 
-    https://artefacts.whynothugo.nl/twemoji.ttf/
+    https://mirror.whynothugo.nl/twemoji.ttf/
 
 Builds are manually triggered when there are upstream releases.
 
