@@ -19,6 +19,7 @@ sources:
 #  - action: email
 #    condition: failure
 #    to: Hugo Osvaldo Barrera <hugo@whynothugo.nl>
+on: push
 tasks:
   - patch: |
       cd noto-emoji
