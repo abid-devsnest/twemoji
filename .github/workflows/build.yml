@@ -1,45 +1,74 @@
-image: alpine/edge
-packages:
-  - make
-  - graphicsmagick
-  - cairo-dev
-  - nototools
-  - pngquant
-  - zopfli
-  - rsync
-environment:
-  VERSION: 15.1.0
-sources:
-  - https://src.fedoraproject.org/rpms/twitter-twemoji-fonts.git#78a8615f22996e173b6489b004210f6302cfa456
-  - https://github.com/jdecked/twemoji.git#v15.1.0
-  - https://github.com/googlefonts/noto-emoji.git#ac1703e9d7feebbf5443a986e08332b1e1c5afcf
-#secrets:
-#  -  84430ee6-f1a0-4717-839d-5cdfefe8f572
-#triggers:
-#  - action: email
-#    condition: failure
-#    to: Hugo Osvaldo Barrera <hugo@whynothugo.nl>
-on: push
-tasks:
-  - patch: |
-      cd noto-emoji
-      patch -p1 -i ../twitter-twemoji-fonts/noto-emoji-use-system-pngquant.patch
-      patch -p1 -i ../twitter-twemoji-fonts/noto-emoji-build-all-flags.patch
-      patch -p1 -i ../twitter-twemoji-fonts/noto-emoji-use-gm.patch
-  - prepare: |
-      cd noto-emoji
-      mv NotoColorEmoji.tmpl.ttx.tmpl Twemoji.tmpl.ttx.tmpl
-      sed -i 's/Noto Color Emoji/Twemoji/; s/NotoColorEmoji/Twemoji/; s/Copyright .* Google Inc\./Twitter, Inc and other contributors./; s/ Version .*/ '$VERSION'/; s/.*is a trademark.*//; s/Google, Inc\./Twitter, Inc and other contributors/; s,http://www.google.com/get/noto/,https://github.com/twitter/twemoji/,; s/.*is licensed under.*/      Creative Commons Attribution 4.0 International/; s,http://scripts.sil.org/OFL,http://creativecommons.org/licenses/by/4.0/,' Twemoji.tmpl.ttx.tmpl
-      cd ../twemoji/assets/72x72/
-      for png in *.png; do
+name: Build TTF
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Set up Dependencies
+      run: |
+        sudo apt install make graphicsmagick libcairo2-dev python3-nototools pngquant zopfli rsync fonttools
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Get Versions
+      run: |
+        VERSION=$(curl -s https://api.github.com/repos/jdecked/twemoji/releases/latest | grep tag_name | cut -d '"' -f 4)
+        VERSION=${VERSION:1}
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        PREVIOUS_VERSION=$(git describe --tags --abbrev=0)
+        echo "PREVIOUS_VERSION=$PREVIOUS_VERSION" >> $GITHUB_ENV
+
+    - name: Clone Repositories
+      run: |
+        git clone https://src.fedoraproject.org/rpms/twitter-twemoji-fonts.git
+        cd twitter-twemoji-fonts
+        git checkout 78a8615f22996e173b6489b004210f6302cfa456
+        cd ..
+        git clone https://github.com/jdecked/twemoji.git
+        cd twemoji
+        git checkout v${{ env.VERSION }}
+        cd ..
+        git clone https://github.com/googlefonts/noto-emoji.git
+        cd noto-emoji
+        git checkout ac1703e9d7feebbf5443a986e08332b1e1c5afcf
+
+    - name: Patch Noto Emoji
+      run: |
+        cd noto-emoji
+        patch -p1 -i ../twitter-twemoji-fonts/noto-emoji-use-system-pngquant.patch
+        patch -p1 -i ../twitter-twemoji-fonts/noto-emoji-build-all-flags.patch
+        patch -p1 -i ../twitter-twemoji-fonts/noto-emoji-use-gm.patch
+
+    - name: Prepare Noto Emoji
+      run: |
+        cd noto-emoji
+        mv NotoColorEmoji.tmpl.ttx.tmpl Twemoji.tmpl.ttx.tmpl
+        sed -i 's/Noto Color Emoji/Twemoji/; s/NotoColorEmoji/Twemoji/; s/Copyright .* Google Inc\./Twitter, Inc and other contributors./; s/ Version .*/ '$VERSION'/; s/.*is a trademark.*//; s/Google, Inc\./Twitter, Inc and other contributors/; s,http://www.google.com/get/noto/,https://github.com/jdecked/twemoji/,; s/.*is licensed under.*/      Creative Commons Attribution 4.0 International/; s,http://scripts.sil.org/OFL,http://creativecommons.org/licenses/by/4.0/,' Twemoji.tmpl.ttx.tmpl
+        cd ../twemoji/assets/72x72/
+        for png in *.png; do
           mv $png emoji_u${png//-/_}
-      done
-  - build: |
-      cd noto-emoji
-      make EMOJI=Twemoji EMOJI_SRC_DIR=../twemoji/assets/72x72 FLAGS= BODY_DIMENSIONS=76x72
-  # - setup-ssh: |
-  #     echo "anchor.whynothugo.nl ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE2WacYpYEP5vvevx4NXQn3Ktd53pBkZR/bpPoS3Wkyg" > $HOME/.ssh/known_hosts
-  # - rsync: |
-  #     cd noto-emoji
-  #     install -Dm 644 Twemoji.ttf artefacts/twemoji.ttf/$(date '+%Y-%m-%d_%H-%M')/Twemoji-$VERSION.ttf
-  #     rsync -r artefacts/ rsync@anchor.whynothugo.nl:./
+        done
+
+    - name: Build Noto Emoji
+      run: |
+        cd noto-emoji
+        sudo ln -s $(which add_vs_cmap) $(which add_vs_cmap).py
+        make EMOJI=Twemoji EMOJI_SRC_DIR=../twemoji/assets/72x72 FLAGS= BODY_DIMENSIONS=76x72
+        mv Twemoji.ttf ../Twemoji-${{ env.VERSION }}.ttf
+
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: ./Twemoji-${{ env.VERSION }}.ttf
+        asset_name: Twemoji-${{ env.VERSION }}.ttf
+        tag: ${{ env.VERSION }}
+        overwrite: true
+        release_name: Twemoji ${{ env.VERSION }}
